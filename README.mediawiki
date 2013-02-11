@@ -1,9 +1,9 @@
-= matlab = =
+= matlab =
 
 This is work in progress and not yet ready for use. It will provide
 matlab bindings for chicken making matlab somewhat bearable.
 
-=== License === ===
+=== License ===
 
 Copyright 2013 Andrei Barbu. All rights reserved.
 This program is free software: you can redistribute it and/or modify
