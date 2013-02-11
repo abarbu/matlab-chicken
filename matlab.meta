@@ -1,0 +1,18 @@
+;;;  -*- Hen -*-
+
+((category math)
+ (author "Andrei Barbu")
+ (maintainer "Andrei Barbu")
+ (license "LGPL")
+ (synopsis "Binding to MATLAB")
+ (depends
+  setup-helper
+  (define-structure "1.0")
+  (traversal "1.1")
+  miscmacros)
+ (test-depends test)
+ (files "matlab.meta" 
+        "matlab.release-info"
+        "matlab.scm" 
+        "examples/simple.scm" 
+        "matlab.setup"))

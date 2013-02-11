@@ -1,0 +1,9 @@
+;;;  -*- Hen -*-
+
+(use setup-helper-mod)
+
+(verify-extension-name "matlab")
+
+(setup-shared-extension-module 'matlab (extension-version "1.0")
+  #:inline? #t #:types? #t
+  #:compile-options '(-O3 -d2))
