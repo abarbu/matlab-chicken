@@ -1,7 +1,7 @@
 = matlab =
 
-This is work in progress and not yet ready for use. It will provide
-matlab bindings for chicken making matlab somewhat bearable.
+This egg provides matlab bindings for chicken making matlab somewhat
+bearable. See ''matlab-example.scm'' for how a quick example.
 
 === License ===
 

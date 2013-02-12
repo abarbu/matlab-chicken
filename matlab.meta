@@ -1,10 +1,10 @@
 ;;;  -*- Hen -*-
 
-((category math)
+((category ffi)
  (author "Andrei Barbu")
  (maintainer "Andrei Barbu")
  (license "LGPL")
- (synopsis "Binding to MATLAB")
+ (synopsis "Binding to matlab")
  (depends
   setup-helper
   (define-structure "1.0")
@@ -14,5 +14,5 @@
  (files "matlab.meta" 
         "matlab.release-info"
         "matlab.scm" 
-        "examples/simple.scm" 
+        "matlab-example.scm" 
         "matlab.setup"))

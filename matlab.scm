@@ -1,41 +1,37 @@
-(MODULE
-
-TOOLLIB-MATLAB)
+(module matlab *
+(import chicken scheme extras foreign)
+(use traversal bind easyffi lolevel matchable define-structure linear-algebra srfi-1 scheme2c-compatibility)
 
 ;;; TODO Scheme to matlab conversion and proper matlab function calls
 ;;; TODO Matlab cell, struct, logical and function
 ;;; TODO Support for building matlab structures
 ;;; TODO Support for complex numbers
 
-(include "QobiScheme.sch")
-(include "toollib-c-macros.sch")
-(include "toollib-matlab.sch")
-
-(c-include "engine.h")
-(c-include "toollib-matlab.h")
-(c-include "idealib-c.h")
+#>
+#include <engine.h>
+<#
 
 ;; The current matlab engine
 (define *engine* #f)
 
-(define *matlab-class-unknown*  (c-value int "mxUNKNOWN_CLASS"))
-(define *matlab-class-cell*     (c-value int "mxCELL_CLASS"))
-(define *matlab-class-struct*   (c-value int "mxSTRUCT_CLASS"))
-(define *matlab-class-logical*  (c-value int "mxLOGICAL_CLASS"))
-(define *matlab-class-char*     (c-value int "mxCHAR_CLASS"))
-(define *matlab-class-double*   (c-value int "mxDOUBLE_CLASS"))
-(define *matlab-class-single*   (c-value int "mxSINGLE_CLASS"))
-(define *matlab-class-int8*     (c-value int "mxINT8_CLASS"))
-(define *matlab-class-uint8*    (c-value int "mxUINT8_CLASS"))
-(define *matlab-class-int16*    (c-value int "mxINT16_CLASS"))
-(define *matlab-class-uint16*   (c-value int "mxUINT16_CLASS"))
-(define *matlab-class-int32*    (c-value int "mxINT32_CLASS"))
-(define *matlab-class-uint32*   (c-value int "mxUINT32_CLASS"))
-(define *matlab-class-int64*    (c-value int "mxINT64_CLASS"))
-(define *matlab-class-uint64*   (c-value int "mxUINT64_CLASS"))
-(define *matlab-class-function* (c-value int "mxFUNCTION_CLASS"))
+(define *matlab-class-unknown*  (foreign-value "mxUNKNOWN_CLASS" int))
+(define *matlab-class-cell*     (foreign-value "mxCELL_CLASS" int))
+(define *matlab-class-struct*   (foreign-value "mxSTRUCT_CLASS" int))
+(define *matlab-class-logical*  (foreign-value "mxLOGICAL_CLASS" int))
+(define *matlab-class-char*     (foreign-value "mxCHAR_CLASS" int))
+(define *matlab-class-double*   (foreign-value "mxDOUBLE_CLASS" int))
+(define *matlab-class-single*   (foreign-value "mxSINGLE_CLASS" int))
+(define *matlab-class-int8*     (foreign-value "mxINT8_CLASS" int))
+(define *matlab-class-uint8*    (foreign-value "mxUINT8_CLASS" int))
+(define *matlab-class-int16*    (foreign-value "mxINT16_CLASS" int))
+(define *matlab-class-uint16*   (foreign-value "mxUINT16_CLASS" int))
+(define *matlab-class-int32*    (foreign-value "mxINT32_CLASS" int))
+(define *matlab-class-uint32*   (foreign-value "mxUINT32_CLASS" int))
+(define *matlab-class-int64*    (foreign-value "mxINT64_CLASS" int))
+(define *matlab-class-uint64*   (foreign-value "mxUINT64_CLASS" int))
+(define *matlab-class-function* (foreign-value "mxFUNCTION_CLASS" int))
 
-(define *matlab-sizeof-mwSize* (c-sizeof "mwSize"))
+(define *matlab-sizeof-mwSize* (foreign-type-size "mwSize"))
 
 ;;; Roughly the number of elements a vector can have when sent over
 ;;; the matlab string interface, anything bigger than this must be
@@ -47,17 +43,17 @@ TOOLLIB-MATLAB)
 
 ;;; Matlab engine bindings
 
-(define matlab-start (c-function pointer ("engOpen" string)))
-(define matlab-stop (c-function int ("engClose" pointer)))
+(define matlab-start (foreign-lambda c-pointer "engOpen" c-string))
+(define matlab-stop (foreign-lambda int "engClose" c-pointer))
 (define matlab-variable
- (c-function pointer ("engGetVariable" pointer string)))
+ (foreign-lambda c-pointer "engGetVariable" c-pointer c-string))
 (define matlab-variable-set!
- (c-function int ("engPutVariable" pointer string pointer)))
-(define c-matlab-eval-string (c-function int ("engEvalString" pointer string)))
+ (foreign-lambda int "engPutVariable" c-pointer c-string c-pointer))
+(define c-matlab-eval-string (foreign-lambda int "engEvalString" c-pointer c-string))
 (define matlab-set-output-buffer
- (c-function int ("engOutputBuffer" pointer pointer int)))
-(define matlab-set-visible (c-function int ("engSetVisible" pointer int)))
-(define matlab-get-visible (c-function int ("engGetVisible" pointer pointer)))
+ (foreign-lambda int "engOutputBuffer" c-pointer c-pointer int))
+(define matlab-set-visible (foreign-lambda int "engSetVisible" c-pointer int))
+(define matlab-get-visible (foreign-lambda int "engGetVisible" c-pointer c-pointer))
 
 (define (matlab-eval-string s) (start-matlab!) (c-matlab-eval-string *engine* s))
 
@@ -94,7 +90,7 @@ TOOLLIB-MATLAB)
   (lambda (buffer)
    (matlab-set-output-buffer *engine* buffer size)
    (let ((result (f (lambda () (c-string->string buffer)))))
-    (matlab-set-output-buffer *engine* null 0)
+    (matlab-set-output-buffer *engine* (address->pointer 0) 0)
     result))))
 
 (define (start-matlab!)
@@ -103,33 +99,33 @@ TOOLLIB-MATLAB)
 
 ;;; Matlab MX Array bindings
 
-(define matlab-class-id (c-function int ("mxGetClassID" pointer)))
-(define matlab-class-name (c-function string ("mxGetClassName" pointer)))
-(define matlab-array->string (c-function string ("mxArrayToString" pointer)))
-(define matlab-calloc (c-function pointer ("mxCalloc" int int)))
-(define matlab-malloc (c-function pointer ("mxMalloc" int)))
-(define matlab-free (c-function void ("mxFree" pointer)))
+(define matlab-class-id (foreign-lambda int "mxGetClassID" c-pointer))
+(define matlab-class-name (foreign-lambda c-string "mxGetClassName" c-pointer))
+(define matlab-array->string (foreign-lambda c-string "mxArrayToString" c-pointer))
+(define matlab-calloc (foreign-lambda c-pointer "mxCalloc" int int))
+(define matlab-malloc (foreign-lambda c-pointer "mxMalloc" int))
+(define matlab-free (foreign-lambda void "mxFree" c-pointer))
 (define matlab-make-numeric-matrix
- (c-function pointer ("mxCreateNumericMatrix" int int int int)))
-(define matlab-destroy (c-function void ("mxDestroyArray" pointer)))
-(define matlab-nr-rows (c-function int ("mxGetM" pointer)))
-(define matlab-nr-columns (c-function int ("mxGetN" pointer)))
+ (foreign-lambda c-pointer "mxCreateNumericMatrix" int int int int))
+(define matlab-destroy (foreign-lambda void "mxDestroyArray" c-pointer))
+(define matlab-nr-rows (foreign-lambda int "mxGetM" c-pointer))
+(define matlab-nr-columns (foreign-lambda int "mxGetN" c-pointer))
 (define matlab-nr-dimensions
- (c-function int ("mxGetNumberOfDimensions" pointer)))
-(define matlab-nr-elements (c-function int ("mxGetNumberOfElements" pointer)))
+ (foreign-lambda int "mxGetNumberOfDimensions" c-pointer))
+(define matlab-nr-elements (foreign-lambda int "mxGetNumberOfElements" c-pointer))
 (define matlab-dimensions-internal
- (c-function pointer ("mxGetDimensions" pointer)))
-(define matlab-data-set! (c-function void ("mxSetData" pointer pointer)))
-(define matlab-data (c-function pointer ("mxGetData" pointer)))
-(define matlab-real-double-data (c-function pointer ("mxGetPr" pointer)))
+ (foreign-lambda c-pointer "mxGetDimensions" c-pointer))
+(define matlab-data-set! (foreign-lambda void "mxSetData" c-pointer c-pointer))
+(define matlab-data (foreign-lambda c-pointer "mxGetData" c-pointer))
+(define matlab-real-double-data (foreign-lambda c-pointer "mxGetPr" c-pointer))
 (define matlab-real-double-data-set!
- (c-function void ("mxSetPr" pointer pointer)))
-(define matlab-complex-double-data (c-function pointer ("mxGetPi" pointer)))
+ (foreign-lambda void "mxSetPr" c-pointer c-pointer))
+(define matlab-complex-double-data (foreign-lambda c-pointer "mxGetPi" c-pointer))
 (define matlab-complex-double-data-set!
- (c-function void ("mxSetPi" pointer pointer)))
-(define matlab-element-size (c-function int ("mxGetElementSize" pointer)))
+ (foreign-lambda void "mxSetPi" c-pointer c-pointer))
+(define matlab-element-size (foreign-lambda int "mxGetElementSize" c-pointer))
 (define matlab-calculate-index-internal
- (c-function int ("mxCalcSingleSubscript" pointer int pointer)))
+ (foreign-lambda int "mxCalcSingleSubscript" c-pointer int c-pointer))
 
 (define (matlab-dimensions matrix)
  (c-exact-array->list (matlab-dimensions-internal matrix)
@@ -203,12 +199,11 @@ TOOLLIB-MATLAB)
   ((= 1 (length dimensions))
    (get-row data (car dimensions)))
   ((< 1 (length dimensions))
-   (transpose
+   (transpose-matrix
     (map-n-vector
      (lambda (n)
       (matlab-data->vector
-       (c-ptr-byte-offset data
-			  (* n element-size (apply * (cdr dimensions))))
+       (pointer+ data (* n element-size (apply * (cdr dimensions))))
        get-row element-size (cdr dimensions)))
      (car dimensions))))
   (else (fuck-up))))
@@ -238,21 +233,21 @@ TOOLLIB-MATLAB)
      i
      ", "
      (number->string e)))
-   (cdr (vector->list v))
-   (number->string (vector-ref v 0)))
+   (number->string (vector-ref v 0))
+   (cdr (vector->list v)))
   "]"))
 
 (define (scheme->matlab! variable s)
  (cond
-  ((pnm? s)
-   (with-temporary-file
-    (cond ((pbm? s) "matlab.pbm")
-		  ((pgm? s) "matlab.pgm")
-		  ((ppm? s) "matlab.ppm"))
-    (lambda (f)
-     (write-pnm s f)
-     (matlab-eval-string
-      (format #f "~a=imread('~a');" variable f)))))
+  ;; ((pnm? s)
+  ;;  (with-temporary-file
+  ;;   (cond ((pbm? s) "matlab.pbm")
+  ;;       	  ((pgm? s) "matlab.pgm")
+  ;;       	  ((ppm? s) "matlab.ppm"))
+  ;;   (lambda (f)
+  ;;    (write-pnm s f)
+  ;;    (matlab-eval-string
+  ;;     (format #f "~a=imread('~a');" variable f)))))
   ((and (matrix? s)
 		(< (* (matrix-rows s) (matrix-columns s))
 		   *matlab-largest-string*))
@@ -308,7 +303,7 @@ TOOLLIB-MATLAB)
  (matlab-eval-string
   (format #f "save ~a ~a"
 		  filename
-		  (reduce
+		  (qreduce
 		   string-append
 		   (map (lambda (v) (format #f "~a " v)) variables)
 		   ""))))
@@ -316,51 +311,13 @@ TOOLLIB-MATLAB)
 (define (matlab-load-variables filename)
  (matlab-eval-string (format #f "load ~a" filename)))
 
-;; andrei debugging
 (define (matlab-show-variable name)
  (with-matlab-variable
   name
   (lambda (var)
    (format #t "~a is ~a~%" name (matlab->scheme var)))))
 
-(define (test-matlab)
- (with-matlab-default-engine
-  (lambda ()
-   (with-matlab-default-output-buffer
-    (lambda (matlab-result-string)
-     (matlab-eval-string "A=[[1,2,3];[4,5,6]]")
-     (matlab-eval-string "B='Hi'")
-     (matlab-eval-string "C=1")
-     (matlab-show-variable "A")
-     (matlab-show-variable "B")
-     (matlab-show-variable "C")
-     (matlab-eval-string "D=randn(2,2,2,2)")
-     (display (matlab-result-string))
-     (matlab-show-variable "D")
-     (matlab-eval-string "'Can also get the output from matlab'")
-     (display (matlab-result-string))
-     (newline)
-     (display "Bye")(newline))))))
-
 (define (matlab-append-to-path directory)
  (matlab-eval-string
   (format "addpath(genpath('~a'))" directory)))
-
-;;; Graphing functions
-
-(define (maybe-looping v steps)
- (cond ((number? v) (lambda (f) (f v)))
-       ((list? v)
-	(unless (= (length v) 2) (fuck-up))
-	(lambda (f)
-	 (map-n
-	  (lambda (n)
-	   (f (+ (car v) (* n (/ (- (cadr v) (car v)) steps)))))
-	  (+ steps 1))))
-       (else (fuck-up))))
-
-(define (evaluate-function f values steps)
- ((foldl
-   (lambda (a b) (lambda (vs) (b (lambda (v) (a (cons v vs))))))
-   (map (lambda (v) (maybe-looping v steps)) values)
-   (lambda (v) (apply f v))) '()))
+)

@@ -1,9 +1,35 @@
 ;;;  -*- Hen -*-
 
-(use setup-helper-mod)
+(use setup-helper-mod srfi-1 srfi-13)
 
 (verify-extension-name "matlab")
 
-(setup-shared-extension-module 'matlab (extension-version "1.0")
-  #:inline? #t #:types? #t
-  #:compile-options '(-O3 -d2))
+(define matlab-directory (with-input-from-pipe "readlink -f `which matlab`|rev|cut -d/ -f3-|rev" read-line))
+(define (matlab-flags kind)
+ (string-split
+  (with-input-from-pipe
+    (string-append
+     "mbuild -f " matlab-directory "/bin/engopts.sh -v 2> /dev/null|grep " kind "|cut -d= -f2-")
+   read-line)))
+
+(define cflags (remove (lambda (a) (equal? a "-ansi")) (matlab-flags "CFLAGS")))
+(define clibs (remove (lambda (a) (equal? a "-lstdc++")) (matlab-flags "CLIBS")))
+(define ldflags (matlab-flags "LDFLAGS"))
+
+(define (escape-flags fs)
+ (map
+  (lambda (s) (if (not (or (string-prefix-ci? "-l" s)
+                           (string-prefix-ci? "-i" s)
+                           (string-prefix-ci? "-d" s)))
+                  (sprintf " -C ~a " s)
+                  (sprintf " ~a " s)))
+  fs))
+
+(setup-shared-extension-module
+ 'matlab (extension-version "1.0")
+ #:inline? #t #:types? #t
+ #:compile-options `(,@(escape-flags cflags) ,@(escape-flags clibs) ,@(escape-flags ldflags)
+                     ,(irregex-replace
+                       "-rpath-link"
+                       (find (lambda (a) (string-prefix? "-Wl,-rpath-link," a)) clibs)
+                       "-rpath")))
