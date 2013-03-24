@@ -199,7 +199,7 @@
   ((= 1 (length dimensions))
    (get-row data (car dimensions)))
   ((< 1 (length dimensions))
-   (transpose-matrix
+   (matrix-transpose
     (map-n-vector
      (lambda (n)
       (matlab-data->vector
