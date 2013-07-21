@@ -1,7 +1,99 @@
+
 = matlab =
 
-This egg provides matlab bindings for chicken making matlab somewhat
-bearable. See ''matlab-example.scm'' for how a quick example.
+This Chicken egg provides matlab bindings. It makes matlab somewhat
+bearable. See ''matlab-example.scm'' for how a quick example. Note
+that this egg doesn't at the moment deal well with Matlab errors and
+it currently only supports marshalling lists, vectors and matrices of
+doubles.
+
+=== Example ===
+
+   (matlab "'hello'")
+   (matlab "a=2+2")
+   (matlab-get-variable "a")
+   (scheme->matlab! "a" '(3))
+   (matlab-get-variable "a")
+
+   (with-matlab-default-output-buffer
+    (lambda (matlab-result-string)
+     (matlab-eval-string "A=[[1,2,3];[4,5,6]]")
+     (matlab-eval-string "B='Hi'")
+     (matlab-eval-string "C=1")
+     (matlab-show-variable "A")
+     (matlab-show-variable "B")
+     (matlab-show-variable "C")
+     (matlab-eval-string "D=randn(2,2,2,2)")
+     (display (matlab-result-string))
+     (matlab-show-variable "D")
+     (matlab-eval-string "'Can also get the output from matlab'")
+     (display (matlab-result-string))
+     (newline)))
+
+This does a few random things in matlab to show off the API.
+
+=== High-level API ===
+
+: (matlab-eval-string s)
+: (matlab-eval-strings . strings)
+: (matlab . strings)
+
+Execute one or more strings. ''(matlab . strings)'' returns the output
+of the command as a string. The return value of the other two calls is
+unspecified. These commands will start up an engine automatically if
+needed.
+
+: (matlab-append-to-path directory)
+
+Performs an ''addpath''.
+
+: (matlab-load-variables filename)
+: (matlab-save-variables filename . variables)
+
+Performs a ''load'' or a ''save''. Saves the entire workspace if no
+variables are provided.
+
+: (start-matlab!)
+
+Starts the Matlab engine. Note that calling this function multiple
+times has no effect.
+
+: (matlab->scheme variable-name)
+
+Marshal a variable from Matlab to scheme. Only supports arrays and
+strings.
+
+: (scheme->matlab! variable-name object)
+
+Assign to a Matlab variable. Only supports matrices, vectors, and
+lists.
+
+=== Low-level API ===
+
+Many internal low-level functions for dealing with Matlab exist but
+they are of interest only to developers. Only those that may be of
+interest to users are listed here.
+
+: (matlab-start arguments)
+: (matlab-stop engine)
+
+Start or stop an engine.
+
+: (matlab-set-visible engine visible?)
+: (matlab-get-visible engine visible?-pointer)
+
+Get and set if the visibility of the Matlab UI.
+
+: *default-matlab-engine-command*
+
+The parameters to use when starting the global Matlab
+engine. Currently ''-nosplash -nodesktop''. If you wish to add to
+these variables you can use the environment variable
+''MATLAB_LOCAL_ARGS''
+
+: *matlab-engine*
+
+The current matlab engine.
 
 === License ===
 

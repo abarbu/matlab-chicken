@@ -1,6 +1,6 @@
 (module matlab *
 (import chicken scheme extras foreign)
-(use traversal bind easyffi lolevel matchable define-structure linear-algebra srfi-1 scheme2c-compatibility)
+(use traversal bind easyffi lolevel define-structure linear-algebra srfi-1 scheme2c-compatibility)
 
 ;;; TODO Scheme to matlab conversion and proper matlab function calls
 ;;; TODO Matlab cell, struct, logical and function
@@ -12,7 +12,7 @@
 <#
 
 ;; The current matlab engine
-(define *engine* #f)
+(define *matlab-engine* #f)
 
 (define *matlab-class-unknown*  (foreign-value "mxUNKNOWN_CLASS" int))
 (define *matlab-class-cell*     (foreign-value "mxCELL_CLASS" int))
@@ -52,15 +52,16 @@
 (define c-matlab-eval-string (foreign-lambda int "engEvalString" c-pointer c-string))
 (define matlab-set-output-buffer
  (foreign-lambda int "engOutputBuffer" c-pointer c-pointer int))
-(define matlab-set-visible (foreign-lambda int "engSetVisible" c-pointer int))
+(define matlab-set-visible (foreign-lambda int "engSetVisible" c-pointer bool))
 (define matlab-get-visible (foreign-lambda int "engGetVisible" c-pointer c-pointer))
 
-(define (matlab-eval-string s) (start-matlab!) (c-matlab-eval-string *engine* s))
+(define (matlab-eval-string s) (start-matlab!) (c-matlab-eval-string *matlab-engine* s))
 
 (define (matlab-eval-strings . strings)
- (for-each (lambda (s) (matlab-eval-string s)) strings))
+ (start-matlab!) (for-each (lambda (s) (matlab-eval-string s)) strings))
 
 (define (matlab . strings)
+ (start-matlab!)
  (with-matlab-default-output-buffer
   (lambda (matlab-result-string)
    (apply matlab-eval-strings strings)
@@ -76,9 +77,9 @@
  (with-matlab-engine *default-matlab-engine-command* f))
 
 (define (with-matlab-engine str f)
- (set! *engine* (matlab-start str))
+ (set! *matlab-engine* (matlab-start str))
  (let ((result (f)))
-  (matlab-stop *engine*)
+  (matlab-stop *matlab-engine*)
   result))
 
 (define (with-matlab-default-output-buffer f)
@@ -88,14 +89,14 @@
  (with-alloc
   size
   (lambda (buffer)
-   (matlab-set-output-buffer *engine* buffer size)
+   (matlab-set-output-buffer *matlab-engine* buffer size)
    (let ((result (f (lambda () (c-string->string buffer)))))
-    (matlab-set-output-buffer *engine* (address->pointer 0) 0)
+    (matlab-set-output-buffer *matlab-engine* (address->pointer 0) 0)
     result))))
 
 (define (start-matlab!)
- (unless *engine*
-  (set! *engine* (matlab-start *default-matlab-engine-command*))))
+ (unless *matlab-engine*
+  (set! *matlab-engine* (matlab-start *default-matlab-engine-command*))))
 
 ;;; Matlab MX Array bindings
 
@@ -281,14 +282,14 @@
    (scheme->matlab! variable (list->vector s)))
   (else (fuck-up))))
 
-(define (matlab->scheme m)
- (cond ((or (matlab-matrix-exact? m) (matlab-matrix-inexact? m))
-		(matlab-matrix->matrix m (matlab-matrix-signed? m)))
-       ((or (matlab-string? m)) (matlab-array->string m))
+(define (matlab->scheme variable-name)
+ (cond ((or (matlab-matrix-exact? variable-name) (matlab-matrix-inexact? variable-name))
+        (matlab-matrix->matrix variable-name (matlab-matrix-signed? variable-name)))
+       ((or (matlab-string? variable-name)) (matlab-array->string variable-name))
        (else (fuck-up))))
 
 (define (with-matlab-variable var f)
- (let* ((x (matlab-variable *engine* var))
+ (let* ((x (matlab-variable *matlab-engine* var))
 		(result (f x)))
   (matlab-destroy x)
   result))

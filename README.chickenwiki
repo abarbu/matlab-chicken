@@ -1,12 +1,104 @@
 [[tags: egg ffi]]
 [[toc:]]
 
-This page is maintained in the this package's [[https://github.com/abarbu/matlab-chicken|github repository]].
+This page is maintained in the this package's
+[[https://github.com/abarbu/matlab-chicken|github repository]].
 
 = matlab
 
-This egg provides matlab bindings for chicken making matlab somewhat
-bearable. See ''matlab-example.scm'' for how a quick example.
+This Chicken egg provides matlab bindings. It makes matlab somewhat
+bearable. See ''matlab-example.scm'' for how a quick example. Note
+that this egg doesn't at the moment deal well with Matlab errors and
+it currently only supports marshalling lists, vectors and matrices of
+doubles.
+
+=== Example
+
+   (matlab "'hello'")
+   (matlab "a=2+2")
+   (matlab-get-variable "a")
+   (scheme->matlab! "a" '(3))
+   (matlab-get-variable "a")
+
+   (with-matlab-default-output-buffer
+    (lambda (matlab-result-string)
+     (matlab-eval-string "A=[[1,2,3];[4,5,6]]")
+     (matlab-eval-string "B='Hi'")
+     (matlab-eval-string "C=1")
+     (matlab-show-variable "A")
+     (matlab-show-variable "B")
+     (matlab-show-variable "C")
+     (matlab-eval-string "D=randn(2,2,2,2)")
+     (display (matlab-result-string))
+     (matlab-show-variable "D")
+     (matlab-eval-string "'Can also get the output from matlab'")
+     (display (matlab-result-string))
+     (newline)))
+
+This does a few random things in matlab to show off the API.
+
+=== High-level API
+
+<procedure>(matlab-eval-string s)</procedure>
+<procedure>(matlab-eval-strings . strings)</procedure>
+<procedure>(matlab . strings)</procedure>
+
+Execute one or more strings. ''(matlab . strings)'' returns the output
+of the command as a string. The return value of the other two calls is
+unspecified. These commands will start up an engine automatically if
+needed.
+
+<procedure>(matlab-append-to-path directory)</procedure>
+
+Performs an ''addpath''.
+
+<procedure>(matlab-load-variables filename)</procedure>
+<procedure>(matlab-save-variables filename . variables)</procedure>
+
+Performs a ''load'' or a ''save''. Saves the entire workspace if no
+variables are provided.
+
+<procedure>(start-matlab!)</procedure>
+
+Starts the Matlab engine. Note that calling this function multiple
+times has no effect.
+
+<procedure>(matlab->scheme variable-name)</procedure>
+
+Marshal a variable from Matlab to scheme. Only supports arrays and
+strings.
+
+<procedure>(scheme->matlab! variable-name object)</procedure>
+
+Assign to a Matlab variable. Only supports matrices, vectors, and
+lists.
+
+=== Low-level API
+
+Many internal low-level functions for dealing with Matlab exist but
+they are of interest only to developers. Only those that may be of
+interest to users are listed here.
+
+<procedure>(matlab-start arguments)</procedure>
+<procedure>(matlab-stop engine)</procedure>
+
+Start or stop an engine.
+
+<procedure>(matlab-set-visible engine visible?)</procedure>
+<procedure>(matlab-get-visible engine visible?-pointer)</procedure>
+
+Get and set if the visibility of the Matlab UI.
+
+<parameter>*default-matlab-engine-command*</parameter>
+
+The parameters to use when starting the global Matlab
+engine. Currently ''-nosplash -nodesktop''. If you wish to add to
+these variables you can use the environment variable
+''MATLAB_LOCAL_ARGS''
+
+<constant>*matlab-engine*</constant>
+
+The current matlab engine.
 
 === License
 

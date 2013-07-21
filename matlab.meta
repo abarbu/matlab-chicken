@@ -6,10 +6,9 @@
  (license "LGPL")
  (synopsis "Binding to matlab")
  (depends
-  setup-helper
-  (define-structure "1.0")
-  (traversal "1.1")
-  miscmacros)
+  setup-helper (define-structure "1.0") (traversal "1.1")
+  miscmacros bind easyffi lolevel define-structure
+  linear-algebra srfi-1 scheme2c-compatibility)
  (test-depends test)
  (files "matlab.meta" 
         "matlab.release-info"
