@@ -4,7 +4,7 @@
 This page is maintained in the this package's
 [[https://github.com/abarbu/matlab-chicken|github repository]].
 
-= matlab
+== matlab
 
 This Chicken egg provides matlab bindings. It makes matlab somewhat
 bearable. See ''matlab-example.scm'' for how a quick example. Note

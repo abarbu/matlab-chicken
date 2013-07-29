@@ -4,11 +4,11 @@
  (author "Andrei Barbu")
  (maintainer "Andrei Barbu")
  (license "LGPL")
- (synopsis "Binding to matlab")
+ (synopsis "Bindings for Matlab")
  (depends
   setup-helper (define-structure "1.0") (traversal "1.1")
-  miscmacros bind easyffi lolevel define-structure
-  linear-algebra srfi-1 scheme2c-compatibility)
+  miscmacros bind easyffi define-structure
+  linear-algebra scheme2c-compatibility)
  (test-depends test)
  (files "matlab.meta" 
         "matlab.release-info"
