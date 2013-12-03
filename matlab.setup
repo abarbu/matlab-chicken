@@ -26,7 +26,7 @@
   fs))
 
 (setup-shared-extension-module
- 'matlab (extension-version "1.2")
+ 'matlab (extension-version "1.3")
  #:inline? #t #:types? #t
  #:compile-options `(,@(escape-flags cflags) ,@(escape-flags clibs) ,@(escape-flags ldflags)
                      ,(irregex-replace

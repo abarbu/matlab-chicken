@@ -261,8 +261,8 @@
 			  "["
 			  (foldl
 			   (lambda (j f) (string-append j "; " f))
-			   (cdr (vector->list vec))
-			   (vector-ref vec 0))
+			   (vector-ref vec 0)
+                           (cdr (vector->list vec)))
 			  "]")))))
   ((and (vector? s) (not (matrix? s))
 		(< (vector-length s) *matlab-largest-string*))
