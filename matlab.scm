@@ -11,6 +11,11 @@
 #include <engine.h>
 <#
 
+(define (number->matlab-string n)
+ (cond ((equal? n +inf.0) "Inf")
+       ((equal? n -inf.0) "-Inf")
+       (else (number->string n))))
+
 ;; The current matlab engine
 (define *matlab-engine* #f)
 
@@ -222,7 +227,7 @@
    (let loop ((a t))
     (for-each-vector (lambda (a) (if (vector? a)
 				(begin (loop a) (format port "~%"))
-				(format port " ~a" a)))
+				(format port " ~a" (number->matlab-string a))))
 		     a)))))
 
 (define (scheme-vector->matlab-string v)
@@ -233,8 +238,8 @@
     (string-append
      i
      ", "
-     (number->string e)))
-   (number->string (vector-ref v 0))
+     (number->matlab-string e)))
+   (number->matlab-string (vector-ref v 0))
    (cdr (vector->list v)))
   "]"))
 
